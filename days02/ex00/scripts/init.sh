@@ -103,6 +103,16 @@ SELECT COUNT(*) AS remaining_duplicates FROM (
 WHERE previous_time IS NOT NULL
   AND event_time - previous_time <= INTERVAL '1 second';
 "
+psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<EOF
+CREATE TABLE items  (
+    product_id      int NOT NULL,
+    category_id     bigint,
+    category_code   varchar(100),
+    brand           varchar(50)
+);
+
+\copy items FROM '/data_item/item.csv' DELIMITER ',' CSV HEADER;
+EOF
 
 psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<EOF
 CREATE TABLE customers_fusion AS
@@ -117,11 +127,7 @@ SELECT
     i.category_code,
     i.brand
 FROM customers c
-LEFT JOIN (
-    SELECT DISTINCT ON (product_id) *
-    FROM items
-    ORDER BY product_id
-) i ON c.product_id = i.product_id;
+LEFT JOIN items i ON c.product_id = i.product_id;
 
 DROP TABLE customers;
 ALTER TABLE customers_fusion RENAME TO customers;
